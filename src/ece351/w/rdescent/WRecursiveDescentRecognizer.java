@@ -60,7 +60,51 @@ public final class WRecursiveDescentRecognizer {
     }
 
     public void waveform() {
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+        id();
+        if (lexer.inspect(":")) {
+            lexer.consume(":");
+        } else {
+            throw new IllegalArgumentException();
+        }
+        bits();
+        if (lexer.inspect(";")) {
+            lexer.consume(";");
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+    
+    public void id() {
+    // Id
+        String token = lexer.debugState();
+        if (lexer.inspectID()) {
+            lexer.consumeID();
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void digit() {
+    // Digits
+        String digits[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+        if (lexer.inspect(digits)) {
+            lexer.consume(lexer.debugState());
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public void bits() {
+    // Bits
+        while (lexer.inspect("0", "1")) {
+            if (lexer.inspect("0")) {
+            lexer.consume("0");
+            }
+            else if (lexer.inspect("1")) {
+                lexer.consume("1");
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 }
