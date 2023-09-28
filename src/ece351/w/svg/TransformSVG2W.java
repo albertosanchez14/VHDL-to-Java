@@ -62,9 +62,46 @@ public final class TransformSVG2W {
 		final List<Line> lines = new ArrayList<Line>(pinslines.segments);
 		final List<Pin> pins = new ArrayList<Pin>(pinslines.pins);
 
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		ImmutableList<Waveform> waveforms = ImmutableList.of();
+		List<Line> lines_p = new ArrayList<Line>();
 
+		// Sort the pins by y position
+		Collections.sort(pins, new Comparator<Pin>() {
+            @Override
+            public int compare(Pin pin1, Pin pin2) {
+                // Compare based on the y component
+                return Integer.compare(pin1.y, pin2.y);
+            }
+        });
+
+		// Sort the lines by y position
+		Collections.sort(lines, COMPARE_Y_X);
+
+		// Group the lines by their pin and transform them into a waveform
+		int n = 0;
+		for (Pin p: pins) {
+			lines_p.clear();
+			int top = p.y - 50;
+			int low = p.y + 50; 
+			boolean end_line = false;
+			// Pick out the lines that are in the range of the pin
+			while (end_line == false) {
+				Line l = lines.get(n);
+				if (l.y1 >= top && l.y2 <= low) {
+					lines_p.add(l);
+					n += 1;
+				}
+				else {
+					end_line = true;
+				}
+				if (n == lines.size()) {
+					end_line = true;
+				}
+			}
+			// Transform the lines and pin into a waveform
+			Waveform waveform = transformLinesToWaveform(lines_p, p);
+			waveforms = waveforms.append(waveform);
+		}
 		return new WProgram(waveforms);
 	}
 
@@ -83,11 +120,23 @@ throw new ece351.util.Todo351Exception();
 	 * @see #transform(PinsLines)
 	 * @see Pin#id
 	 */
-	private static Waveform transformLinesToWaveform(final List<Line> lines, final List<Pin> pins) {
+	private static Waveform transformLinesToWaveform(final List<Line> lines, final Pin pin) {
 		if(lines.isEmpty()) return null;
-
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		ImmutableList<String> bits = ImmutableList.of();
+		
+		// Sort the lines by x position
+		Collections.sort(lines, COMPARE_X);
+		// Match the horizontal lines to its corresponding bit
+		int top = pin.y - 50;
+		int low = pin.y + 50;
+		for (Line l: lines) {
+			if (l.y1 == low && l.y2 == low) {
+				bits = bits.append("0");
+			} else if (l.y1 == top && l.y2 == top){
+				bits = bits.append("1");
+			}
+		}
+		return new Waveform(bits, pin.id);
 	}
 
 	/**

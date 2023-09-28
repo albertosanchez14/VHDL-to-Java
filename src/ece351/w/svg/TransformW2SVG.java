@@ -56,8 +56,8 @@ public final class TransformW2SVG {
 		
 		int y_mid = 150;
 		int y_prev = 150;
-		int y_pos =150;
-		final int y_off =50;
+		int y_pos = 150;
+		final int y_off = 50;
 
 		// loop on waveforms
 		// this line implicitly uses an iterator
@@ -69,21 +69,42 @@ public final class TransformW2SVG {
 			out.println(Pin.toSVG(w.name, x, y_mid));
 
 			// advance the x position to start drawing
-			x=100;
+			x = 100;
 
 			// loop on bits
 			for (final String bit : w.bits) {
 				// set the y position according to the value of the bit
+				int low = y_mid + y_off;
+				int high = y_mid - y_off;
+				if (bit.equals("0") && y_pos == y_mid) {
+					y_pos = y_prev + y_off;
+				} else if (bit.equals("0") && y_pos != low) {
+					y_pos = y_prev + y_off + 50;
+				} else if (bit.equals("0") && y_pos == low) {
+					y_pos = y_prev;
+				} else if (bit.equals("1") && y_pos == y_mid) {
+					y_pos = y_prev - y_off;
+				} else if (bit.equals("1") && y_pos != high) {
+					y_pos = y_prev - y_off - 50;
+				} else if (bit.equals("1") && y_pos == high) {
+					y_pos = y_prev;
+				} else {
+					throw new IllegalArgumentException("bit must be 0 or 1");
+				}
+				
 				// draw the vertical line
+				out.println(Line.toSVG(x, y_prev, x, y_pos));
 				// draw the horizontal line
+				out.println(Line.toSVG(x, y_pos, x + WIDTH, y_pos));
 				// get ready for the next bit
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+				y_prev = y_pos;
+				x += WIDTH;
 			}
 			
 			// advance the y position for the next pin
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+			y_mid += WIDTH + 50;
+			y_prev = y_mid;
+			y_pos = y_mid;
 
 		}
 
