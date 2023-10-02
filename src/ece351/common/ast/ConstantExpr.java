@@ -63,8 +63,13 @@ public final class ConstantExpr extends Expr {
 	}
 
 	public String toString() {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		if (b.toString().equals("true")) {
+			return "'" + "1" + "'";
+		} else if (b.toString().equals("false")){
+			return "'" + "0" + "'";
+		} else {
+			throw new IllegalArgumentException("Invalid input");
+		}
 	}
 
 	public Expr accept(final ExprVisitor v){
@@ -89,8 +94,7 @@ throw new ece351.util.Todo351Exception();
 		final ConstantExpr that = (ConstantExpr) obj;
 
 		// compare field values
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		return this.b.equals(that.b);
 	}
 
 	@Override

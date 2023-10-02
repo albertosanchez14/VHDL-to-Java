@@ -89,11 +89,62 @@ public final class FRecursiveDescentParser implements Constants {
         return new AssignmentStatement(var, expr);
     }
     
-    Expr expr() { throw new ece351.util.Todo351Exception(); } // TODO // TODO: replace this stub
-    Expr term() { throw new ece351.util.Todo351Exception(); } // TODO // TODO: replace this stub
-    Expr factor() { throw new ece351.util.Todo351Exception(); } // TODO // TODO: replace this stub
-    VarExpr var() { throw new ece351.util.Todo351Exception(); } // TODO // TODO: replace this stub
-    ConstantExpr constant() { throw new ece351.util.Todo351Exception(); } // TODO // TODO: replace this stub
+    Expr expr() { 
+        Expr te = term();
+        while (lexer.inspect("or")) {
+            lexer.consume("or");
+            te = new OrExpr(te, term());
+        }
+        return te;
+    }
+    Expr term() {
+        Expr ter = factor();
+        while (lexer.inspect("and")) {
+            lexer.consume("and");
+            ter = new AndExpr(ter, factor());
+        }
+        return ter;
+    }
+    
+    Expr factor() {
+        Expr fact;
+        if (lexer.inspect("not")) {
+            lexer.consume("not");
+            fact = new NotExpr(factor());
+        } else if (lexer.inspect("(")) {
+            lexer.consume("(");
+            fact = expr();
+            lexer.consume(")");
+        } else if (peekConstant()) {
+            fact = constant();
+        } else {
+            fact = var();
+        }
+        return fact;
+    }
+    VarExpr var() { 
+        if (lexer.inspectID()) {
+            return new VarExpr(lexer.consumeID());
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+    ConstantExpr constant() {
+        Boolean constant;
+        lexer.consume("'");
+        if (lexer.inspect("0")) {
+            lexer.consume("0");
+            constant = false;
+        }
+        else if (lexer.inspect("1")) {
+            lexer.consume("1");
+            constant = true;
+        } else {
+            throw new IllegalArgumentException();
+        }
+        lexer.consume("'");
+        return ConstantExpr.make(constant);
+    }
 
     // helper functions
     private boolean peekConstant() {
