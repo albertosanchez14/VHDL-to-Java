@@ -48,7 +48,6 @@ public final class AndExpr extends CommutativeBinaryExpr {
 	@Override
 	protected Expr simplifyOnce() {
 		// return a new NaryAndExpr with the same children as this AndExpr
-		// TODO: short code snippet
 		List<Expr> children = new LinkedList<Expr>();
 		children.add(this.left);
 		children.add(this.right);

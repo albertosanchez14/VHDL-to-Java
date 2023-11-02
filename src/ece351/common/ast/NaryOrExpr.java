@@ -52,7 +52,6 @@ public final class NaryOrExpr extends NaryExpr {
 
 	@Override
 	public ConstantExpr getAbsorbingElement() {
-		// TODO: short code snippet
 		return ConstantExpr.TrueExpr;
 	}
 

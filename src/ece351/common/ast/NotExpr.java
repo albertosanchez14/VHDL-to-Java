@@ -62,7 +62,6 @@ public final class NotExpr extends UnaryExpr{
 			// something changed
 			return new NotExpr(child);
 		}
-    	// TODO: replace this stub
     }
 	
     public Expr accept(final ExprVisitor v){

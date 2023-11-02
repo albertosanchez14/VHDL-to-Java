@@ -49,7 +49,6 @@ public final class OrExpr extends CommutativeBinaryExpr{
 	@Override
 	public Expr simplifyOnce() {
 		// return a new NaryOrExpr with the same children as this OrExpr
-		// TODO: short code snippet
 		List<Expr> children = new LinkedList<Expr>();
 		children.add(this.left);
 		children.add(this.right);

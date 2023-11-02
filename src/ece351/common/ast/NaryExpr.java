@@ -191,7 +191,6 @@ public abstract class NaryExpr extends Expr {
 			}
 		}
 		return true;
-		// TODO: longer code snippet
 	}
 
 	
@@ -219,35 +218,16 @@ public abstract class NaryExpr extends Expr {
 		// note: we do not assert repOk() here because the rep might not be ok
 		// the result might contain duplicate children, and the children
 		// might be out of order
-		
 		if (this.children.size() == 0) {
 			return this;
 		}
-		
-		// int index = 0;
-		// while (index < this.children.size()) {
-		// 	// Expr child = this.children.get(index);
-		//  	// child = child.simplifyOnce();
-		//  	// this.children.set(index, child);
-		// 	NaryExpr a = this.filter(OrExpr.class, true);
-		// 	index++;
-		// }
-
-		// NaryExpr a = this.filter(OrExpr.class, true);
-		// a = a.simplifyOnce();
-		
-		// if (this.children.contains(OrExpr.class)) {
-		// 	NaryExpr a = this.filter(NaryExpr.class, false);
-		// 	//a = a.simplifyOnce();
-		// 	children.add(a);
-		// }
 		List<Expr> children = new LinkedList<Expr>();
 		for (int i = 0; i < this.children.size(); i++) {
 			Expr child = this.children.get(i);
 			child = child.simplifyOnce();
 			children.add(i, child);
 		}
-		return newNaryExpr(children); // TODO: replace this stub
+		return newNaryExpr(children);
 	}
 
 	
@@ -257,41 +237,22 @@ public abstract class NaryExpr extends Expr {
 			// use filter to get the other children, which will be kept in the result unchanged
 			// merge in the grandchildren
 			// assert result.repOk():  this operation should always leave the AST in a legal state
-		
 		List<Expr> children = new LinkedList<Expr>();
-		if (this instanceof NaryOrExpr) {
-			NaryExpr a = this.filter(NaryOrExpr.class, true);
-			for (int i = 0; i < a.children.size(); i++) {
-				NaryOrExpr child = (NaryOrExpr) a.children.get(i);
-				for (int j = 0; j < child.children.size(); j++) {
-					Expr grandchild = child.children.get(j);
-					children.add(grandchild);
-				}
+		NaryExpr a = this.filter(this.getClass(), true);
+		for (int i = 0; i < a.children.size(); i++) {
+			NaryExpr child = (NaryExpr) a.children.get(i);
+			for (int j = 0; j < child.children.size(); j++) {
+				Expr grandchild = child.children.get(j);
+				children.add(grandchild);
 			}
-			NaryExpr b = this.filter(NaryOrExpr.class, false);
-			for (int i = 0; i < b.children.size(); i++) {
-				Expr child = b.children.get(i);
-				children.add(child);
-			}
-			return newNaryExpr(children);
 		}
-		if (this instanceof NaryAndExpr) {
-			NaryExpr a = this.filter(NaryAndExpr.class, true);
-			for (int i = 0; i < a.children.size(); i++) {
-				NaryAndExpr child = (NaryAndExpr) a.children.get(i);
-				for (int j = 0; j < child.children.size(); j++) {
-					Expr grandchild = child.children.get(j);
-					children.add(grandchild);
-				}
-			}
-			NaryExpr b = this.filter(NaryAndExpr.class, false);
-			for (int i = 0; i < b.children.size(); i++) {
-				Expr child = b.children.get(i);
-				children.add(child);
-			}
-			return newNaryExpr(children);
+		NaryExpr b = this.filter(this.getClass(), false);
+		for (int i = 0; i < b.children.size(); i++) {
+			Expr child = b.children.get(i);
+			children.add(child);
 		}
-		return this; // TODO: clean this code
+		assert newNaryExpr(children).repOk();
+		return newNaryExpr(children);
 	}
 
 
@@ -311,9 +272,8 @@ public abstract class NaryExpr extends Expr {
 			ImmutableList<Expr> l = ImmutableList.of(this.getIdentityElement());
 			return newNaryExpr(l);
 		}
-		return this;
 		// normal return
-		// TODO: replace this stub
+		return this;
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
     }
 
@@ -323,10 +283,10 @@ public abstract class NaryExpr extends Expr {
 			// absorbing element is present: return it
 			return newNaryExpr(ImmutableList.of(this.getAbsorbingElement()));
 		}
-			// absorbing element is present: return it
-			// not so fast! what is the return type of this method? why does it have to be that way?
-			// no absorbing element present, do nothing
-		return this; // TODO: replace this stub
+		// absorbing element is present: return it
+		// not so fast! what is the return type of this method? why does it have to be that way?
+		// no absorbing element present, do nothing
+		return this;
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
 	}
 
@@ -346,7 +306,7 @@ public abstract class NaryExpr extends Expr {
 				// found matching negation and its complement
 				// return absorbing element	
 		// no complements to fold
-		return this; // TODO: replace this stub
+		return this;
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
 	}
 
@@ -366,7 +326,7 @@ public abstract class NaryExpr extends Expr {
 		} else {
 			// no changes
 			return this;
-		} // TODO: replace this stub
+		}
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
 	}
 
@@ -413,7 +373,6 @@ public abstract class NaryExpr extends Expr {
 		} else {
 			return this;
 		}
-		// TODO: replace this stub
     	// do not assert repOk(): this operation might leave the AST in an illegal state (with only one child)
 	}
 
@@ -443,29 +402,11 @@ public abstract class NaryExpr extends Expr {
 							}
 						}
 					}
-					// } else {
-					// 	for (int j = 0; j < child3.children.size(); j++) {
-					// 		Expr child2 = child3.children.get(j);
-					// 		if (this.children.contains(child2)) {
-					// 			l.remove(child);
-					// 		}
-					// 	} 
-					// }
-				}
-				// for (int j = 0; j < this.children.size(); j++) {
-				// 	Expr child2 = this.children.get(j);
-				// 	if (child2 instanceof NaryAndExpr) {
-				// 		// NaryAndExpr child3 = (NaryAndExpr)child2;
-				// 		NaryExpr a = this.filter(NaryOrExpr.class, true);
-				// 		if (child3.children.contains(child)) {
-				// 			l.remove(child);
-				// 		} 
-				// 	}
-				// }			
+				}			
 			}
 			return newNaryExpr(l);
 		}
-		return this; // TODO: replace this stub
+		return this;
     	// do not assert repOk(): this operation might leave the AST in an illegal state (with only one child)
 	}
 
@@ -479,7 +420,8 @@ public abstract class NaryExpr extends Expr {
 		if (this.children.size() == 1) {
 			return this.children.get(0);
 		}
-		return this; // TODO: replace this stub
+		assert this.repOk();
+		return this;
 	}
 
 	/**
