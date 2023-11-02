@@ -26,6 +26,9 @@
 
 package ece351.common.ast;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import ece351.common.visitor.ExprVisitor;
 
 
@@ -47,7 +50,10 @@ public final class OrExpr extends CommutativeBinaryExpr{
 	public Expr simplifyOnce() {
 		// return a new NaryOrExpr with the same children as this OrExpr
 		// TODO: short code snippet
-		throw new ece351.util.Todo351Exception();
+		List<Expr> children = new LinkedList<Expr>();
+		children.add(this.left);
+		children.add(this.right);
+		return new NaryOrExpr(children);
 	}
 	@Override
 	public String operator() {

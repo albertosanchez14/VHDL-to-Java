@@ -29,7 +29,6 @@ package ece351.common.ast;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -183,8 +182,16 @@ public abstract class NaryExpr extends Expr {
 		// supposed to be sorted, but might not be (because repOk might not pass)
 		// if they are not the same elements in the same order return false
 		// no significant differences found, return true
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		if (this.children.size() != that.children.size()) {
+			return false;
+		}
+		for (int i = 0; i < this.children.size(); i++) {
+			if (!e.examine(this.children.get(i), that.children.get(i))) {
+				return false;
+			}
+		}
+		return true;
+		// TODO: longer code snippet
 	}
 
 	
@@ -212,7 +219,35 @@ throw new ece351.util.Todo351Exception();
 		// note: we do not assert repOk() here because the rep might not be ok
 		// the result might contain duplicate children, and the children
 		// might be out of order
-		return this; // TODO: replace this stub
+		
+		if (this.children.size() == 0) {
+			return this;
+		}
+		
+		// int index = 0;
+		// while (index < this.children.size()) {
+		// 	// Expr child = this.children.get(index);
+		//  	// child = child.simplifyOnce();
+		//  	// this.children.set(index, child);
+		// 	NaryExpr a = this.filter(OrExpr.class, true);
+		// 	index++;
+		// }
+
+		// NaryExpr a = this.filter(OrExpr.class, true);
+		// a = a.simplifyOnce();
+		
+		// if (this.children.contains(OrExpr.class)) {
+		// 	NaryExpr a = this.filter(NaryExpr.class, false);
+		// 	//a = a.simplifyOnce();
+		// 	children.add(a);
+		// }
+		List<Expr> children = new LinkedList<Expr>();
+		for (int i = 0; i < this.children.size(); i++) {
+			Expr child = this.children.get(i);
+			child = child.simplifyOnce();
+			children.add(i, child);
+		}
+		return newNaryExpr(children); // TODO: replace this stub
 	}
 
 	
@@ -222,22 +257,72 @@ throw new ece351.util.Todo351Exception();
 			// use filter to get the other children, which will be kept in the result unchanged
 			// merge in the grandchildren
 			// assert result.repOk():  this operation should always leave the AST in a legal state
-		return this; // TODO: replace this stub
+		
+		List<Expr> children = new LinkedList<Expr>();
+		if (this instanceof NaryOrExpr) {
+			NaryExpr a = this.filter(NaryOrExpr.class, true);
+			for (int i = 0; i < a.children.size(); i++) {
+				NaryOrExpr child = (NaryOrExpr) a.children.get(i);
+				for (int j = 0; j < child.children.size(); j++) {
+					Expr grandchild = child.children.get(j);
+					children.add(grandchild);
+				}
+			}
+			NaryExpr b = this.filter(NaryOrExpr.class, false);
+			for (int i = 0; i < b.children.size(); i++) {
+				Expr child = b.children.get(i);
+				children.add(child);
+			}
+			return newNaryExpr(children);
+		}
+		if (this instanceof NaryAndExpr) {
+			NaryExpr a = this.filter(NaryAndExpr.class, true);
+			for (int i = 0; i < a.children.size(); i++) {
+				NaryAndExpr child = (NaryAndExpr) a.children.get(i);
+				for (int j = 0; j < child.children.size(); j++) {
+					Expr grandchild = child.children.get(j);
+					children.add(grandchild);
+				}
+			}
+			NaryExpr b = this.filter(NaryAndExpr.class, false);
+			for (int i = 0; i < b.children.size(); i++) {
+				Expr child = b.children.get(i);
+				children.add(child);
+			}
+			return newNaryExpr(children);
+		}
+		return this; // TODO: clean this code
 	}
 
 
     private NaryExpr foldIdentityElements() {
     	// if we have only one child stop now and return self
+		if (this.children.size() == 1) {
+			return this;
+		}
     	// we have multiple children, remove the identity elements
-    		// all children were identity elements, so now our working list is empty
-    		// return a new list with a single identity element
-    		// normal return
-		return this; // TODO: replace this stub
+		NaryExpr a = this.filter(this.getIdentityElement(), Examiner.Equals, false);
+		if (this.children.contains(this.getIdentityElement())) {
+			return a;
+		}
+		// all children were identity elements, so now our working list is empty
+		if (a.children.size() == 0) {
+			// return a new list with a single identity element
+			ImmutableList<Expr> l = ImmutableList.of(this.getIdentityElement());
+			return newNaryExpr(l);
+		}
+		return this;
+		// normal return
+		// TODO: replace this stub
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
     }
 
     private NaryExpr foldAbsorbingElements() {
 		// absorbing element: 0.x=0 and 1+x=1
+		if (this.children.contains(this.getAbsorbingElement())) {
+			// absorbing element is present: return it
+			return newNaryExpr(ImmutableList.of(this.getAbsorbingElement()));
+		}
 			// absorbing element is present: return it
 			// not so fast! what is the return type of this method? why does it have to be that way?
 			// no absorbing element present, do nothing
@@ -248,11 +333,18 @@ throw new ece351.util.Todo351Exception();
 	private NaryExpr foldComplements() {
 		// collapse complements
 		// !x . x . ... = 0 and !x + x + ... = 1
-		// x op !x = absorbing element
+		NaryExpr a = this.filter(NotExpr.class, true);
+		if (a.children.size() == 1) {
+			// x op !x = absorbing element
+			NotExpr element = (NotExpr)a.children.get(0);
+			if (this.children.contains(element.expr)) {
+				return newNaryExpr(ImmutableList.of(this.getAbsorbingElement()));
+			}
+		}
 		// find all negations
 		// for each negation, see if we find its complement
 				// found matching negation and its complement
-				// return absorbing element
+				// return absorbing element	
 		// no complements to fold
 		return this; // TODO: replace this stub
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
@@ -260,23 +352,119 @@ throw new ece351.util.Todo351Exception();
 
 	private NaryExpr removeDuplicates() {
 		// remove duplicate children: x.x=x and x+x=x
+		ImmutableList<Expr> l = ImmutableList.of();
+		for (int i = 0; i < this.children.size(); i++) {
+			Expr child = this.children.get(i);
+			if (this.children.contains(child) && !l.contains(child)) {
+				l = l.append(child);
+			}
+		}
 		// since children are sorted this is fairly easy
-			// no changes
+		if (l.size() > 0) {
 			// removed some duplicates
-		return this; // TODO: replace this stub
+			return newNaryExpr(l);
+		} else {
+			// no changes
+			return this;
+		} // TODO: replace this stub
     	// do not assert repOk(): this fold might leave the AST in an illegal state (with only one child)
 	}
 
 	private NaryExpr simpleAbsorption() {
 		// (x.y) + x ... = x ...
 		// check if there are any conjunctions that can be removed
-		return this; // TODO: replace this stub
+		List<Expr> l = new LinkedList<Expr>(children);
+		NaryExpr a;
+		if (this instanceof NaryAndExpr) {
+			a = this.filter(NaryOrExpr.class, true);
+		} else if (this instanceof NaryOrExpr) {
+			a = this.filter(NaryAndExpr.class, true);
+		} else {
+			return this;
+		}
+		for (int i = 0; i < this.children.size(); i++) {
+			Expr child = this.children.get(i);
+			// Check if the child is a subset of any other child
+			for (int j = 0; j < a.children.size(); j++) {
+				NaryExpr child2 = (NaryExpr)a.children.get(j);
+				if (child instanceof NaryExpr) {
+					NaryExpr child3 = (NaryExpr)child;
+					int count = child3.children.size();
+					for (Expr child_min : child3.children) {
+						if (child2.children.contains(child_min)) {
+							count -= 1;
+						}
+					}
+					if (count == 0 && child3.children.size() < child2.children.size()) {
+						l.remove(child2);
+					}
+				} else {
+					for (int n = 0; n < a.children.size(); n++) {
+						NaryExpr child5 = (NaryExpr)a.children.get(j);
+						if (child5.children.contains(child)) {
+							l.remove(child5);
+						} 
+					}
+				}
+			}			
+		}
+		if (l.size() != children.size()) {
+			return newNaryExpr(l);
+		} else {
+			return this;
+		}
+		// TODO: replace this stub
     	// do not assert repOk(): this operation might leave the AST in an illegal state (with only one child)
 	}
 
 	private NaryExpr subsetAbsorption() {
 		// check if there are any conjunctions that are supersets of others
 		// e.g., ( a . b . c ) + ( a . b ) = a . b
+		List<Expr> l = new LinkedList<Expr>(children);
+		if (this instanceof NaryOrExpr) {
+			for (int i = 0; i < this.children.size(); i++) {
+				Expr child = this.children.get(i);
+				// Check if the child is a subset of any other child
+				if (child instanceof NaryAndExpr) {
+					NaryAndExpr child3 = (NaryAndExpr)child;
+					NaryExpr a = child3.filter(NaryOrExpr.class, true);
+					if (a.children.size() > 0) {
+						for (int j = 0; j < a.children.size(); j++) {
+							NaryExpr child2 = (NaryExpr)a.children.get(j);
+							int count = child2.children.size();
+							for (int n = 0; n < child2.children.size(); n++) {
+								Expr child4 = child2.children.get(n);
+								if (this.children.contains(child4)) {
+									count -= 1;
+								}
+							}
+							if (count == 0) {
+								l.remove(child);
+							}
+						}
+					}
+					// } else {
+					// 	for (int j = 0; j < child3.children.size(); j++) {
+					// 		Expr child2 = child3.children.get(j);
+					// 		if (this.children.contains(child2)) {
+					// 			l.remove(child);
+					// 		}
+					// 	} 
+					// }
+				}
+				// for (int j = 0; j < this.children.size(); j++) {
+				// 	Expr child2 = this.children.get(j);
+				// 	if (child2 instanceof NaryAndExpr) {
+				// 		// NaryAndExpr child3 = (NaryAndExpr)child2;
+				// 		NaryExpr a = this.filter(NaryOrExpr.class, true);
+				// 		if (child3.children.contains(child)) {
+				// 			l.remove(child);
+				// 		} 
+				// 	}
+				// }			
+			}
+			return newNaryExpr(l);
+		}
 		return this; // TODO: replace this stub
     	// do not assert repOk(): this operation might leave the AST in an illegal state (with only one child)
 	}
@@ -288,6 +476,9 @@ throw new ece351.util.Todo351Exception();
 		// if we have only one child, return it
 		// having only one child is an illegal state for an NaryExpr
 			// multiple children; nothing to do; return self
+		if (this.children.size() == 1) {
+			return this.children.get(0);
+		}
 		return this; // TODO: replace this stub
 	}
 
