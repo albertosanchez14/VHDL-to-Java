@@ -87,7 +87,85 @@ public /*final*/ class FParboiledParser extends FBase implements Constants {
 
 	@Override
 	public Rule Program() {
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		return Sequence(
+			push(new FProgram()),
+			OneOrMore(Formula()), 
+			EOI);
 	}
+	
+	public Rule Formula() {
+        return Sequence(
+			Var(),
+			push(new VarExpr((String)match())),
+			W0(), 
+			"<=", 
+			W0(), 
+			Expr(),
+			swap(),
+			W0(), 
+			";", 
+			W0(),
+			push(new AssignmentStatement((VarExpr)pop(), (Expr)pop())),
+			swap(),
+			push(((FProgram)pop()).append((AssignmentStatement)pop())));
+    }
+
+    public Rule Expr() {
+        return Sequence(
+			W0(),
+			Term(), 
+			W0(), 
+			ZeroOrMore(Sequence(
+				OR(), 
+				W0(), 
+				Term(), 
+				W0(), 
+				swap(),
+				push(new OrExpr((Expr)pop(), (Expr)pop()))))
+			);
+    }
+
+    public Rule Term() {
+        return Sequence(
+			W0(),
+			Factor(),
+			W0(), 
+			ZeroOrMore(Sequence(
+				AND(), 
+				W0(), 
+				Factor(),
+				W0(),
+				swap(),
+				push(new AndExpr((Expr)pop(), (Expr)pop())))));
+    }
+
+    public Rule Factor() {
+        return FirstOf(
+			Sequence(
+				NOT(),
+				W0(),
+				Factor(),
+				push(new NotExpr((Expr)pop()))),
+			Sequence(
+				"(", 
+				W0(), 
+				Expr(),
+				W0(), 
+				")"),
+			Sequence(
+				Var(),
+				push(match()),
+				push(new VarExpr((String)pop()))),
+			Sequence(
+				Constant(),
+				push(ConstantExpr.make((String)pop()))));
+    }
+
+    public Rule Var() {
+        return Sequence(FirstOf(CharRange('a', 'z'), CharRange('A', 'Z')), ZeroOrMore(FirstOf(CharRange('a', 'z'), CharRange('A', 'Z'), CharRange('0', '9'), '_')));
+    }
+
+    public Rule Constant() {
+        return Sequence("'",CharRange('0', '1'), push(match()),"'");
+    }
 }

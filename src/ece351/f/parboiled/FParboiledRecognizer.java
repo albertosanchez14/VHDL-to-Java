@@ -55,11 +55,32 @@ public /*final*/ class FParboiledRecognizer extends FBase implements Constants {
 
 	@Override
 	public Rule Program() {
-		// STUB: return NOTHING; // TODO: replace this stub
 		// For the grammar production Id, ensure that the Id does not match any of the keywords specified
 		// in the rule, 'Keyword'
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+        return Sequence(OneOrMore(Formula()), EOI);
 	}
 
+    public Rule Formula() {
+        return Sequence(Var(), W0(), "<=", W0(), Expr(), W0(), ";", W0());
+    }
+
+    public Rule Expr() {
+        return Sequence(Term(), W0(), ZeroOrMore(Sequence(OR(), W0(), Term(), W0())));
+    }
+
+    public Rule Term() {
+        return Sequence(Factor(), W0(), ZeroOrMore(Sequence(AND(), W0(), Factor(), W0())));
+    }
+
+    public Rule Factor() {
+        return FirstOf(Sequence(NOT(), W0(), Factor()), Sequence("(", W0(), Expr(), W0(), ")"), Var(), Constant());
+    }
+
+    public Rule Var() {
+        return Sequence(FirstOf(CharRange('a', 'z'), CharRange('A', 'Z')), ZeroOrMore(FirstOf(CharRange('a', 'z'), CharRange('A', 'Z'), CharRange('0', '9'), '_')));
+    }
+
+    public Rule Constant() {
+        return FirstOf("'0'", "'1'");
+    }
 }
