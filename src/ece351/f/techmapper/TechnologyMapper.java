@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.parboiled.common.ImmutableList;
+
 import kodkod.util.collections.IdentityHashSet;
 import ece351.common.ast.AndExpr;
 import ece351.common.ast.AssignmentStatement;
@@ -123,17 +125,101 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 		header(out);
 		
 		// build a set of all of the exprs in the program
+		Set<Expr> exprs = ExtractAllExprs.allExprs(program);
+		
+		// simplify by the morgan rules
+		// for (Expr e : exprs) {
+		// 	// -a or -b = -(a and b)
+		// 	if (e instanceof OrExpr) {
+		// 		Expr left = ((OrExpr) e).left;
+		// 		Expr right = ((OrExpr) e).right;
+		// 		if (left instanceof NotExpr && right instanceof NotExpr) {
+		// 			Expr newExpr = new NotExpr(new AndExpr(((NotExpr) left).expr, ((NotExpr) right).expr));
+		// 			substitutions.put(e, newExpr);
+		// 		}
+		// 	}
+		// 	// -a or -b = -(a and b)
+		// 	if (e instanceof NaryOrExpr) {
+		// 		ImmutableList<Expr> children = ImmutableList.of();
+		// 		for (final Expr c : ((NaryOrExpr) e).children) {
+		// 			if (c instanceof NotExpr) {
+		// 				Expr a = ((NotExpr) c).expr;
+		// 				children = children.append(a);
+		// 			}
+		// 		}
+		// 		if (children.size() == ((NaryOrExpr) e).children.size()) {
+		// 			NaryAndExpr newExpr = new NaryAndExpr(children);
+		// 			// substitutions.put(e, new NotExpr(newExpr));
+		// 			exprs.remove(e);
+		// 			exprs.add(new NotExpr(newExpr));
+		// 		}
+		// 	}
+		// 	// -a and -b = -(a or b)
+		// 	if (e instanceof AndExpr) {
+		// 		Expr left = ((AndExpr) e).left;
+		// 		Expr right = ((AndExpr) e).right;
+		// 		if (left instanceof NotExpr && right instanceof NotExpr) {
+		// 			Expr newExpr = new NotExpr(new OrExpr(((NotExpr) left).expr, ((NotExpr) right).expr));
+		// 			substitutions.put(e, newExpr);
+		// 		}
+		// 	}
+		// 	// -a and -b = -(a or b)
+		// 	if (e instanceof NaryAndExpr) {
+		// 		NaryOrExpr newExpr = new NaryOrExpr();
+		// 		for (final Expr c : ((NaryAndExpr) e).children) {
+		// 			if (c instanceof NotExpr) {
+		// 				newExpr.append(((NotExpr) c).expr);
+		// 			}
+		// 		}
+		// 		if (newExpr.children.size() == ((NaryAndExpr) e).children.size()) {
+		// 			// substitutions.put(e, newExpr);
+		// 			exprs.remove(e);
+		// 			exprs.add(newExpr);
+		// 		}
+		// 	}
+		// }
+		
 		// build substitutions by determining equivalences of exprs
+		int i = 0;
+		int j = 0;
+		for (final Expr e1 : exprs) {
+			for (final Expr e2 : exprs) {
+				if (i != j) {
+					if (examiner.examine(e1, e2)) {
+						substitutions.put(e1, e2);
+					}
+				} else {
+					substitutions.put(e1, e1);
+				}
+				j++;
+			}
+			i++;
+			j = 0;
+		}
+		for (final Expr e : substitutions.values()) {
+			traverseExpr(e);
+		}
 		// create nodes for output vars
+		for (final AssignmentStatement astmt : program.formulas) {
+			//visitVar(astmt.outputVar);
+			edge(astmt.expr, astmt.outputVar);
+		}
 		// attach images to gates
 		// ../../gates/not_noleads.png
 		// ../../gates/or_noleads.png
 		// ../../gates/and_noleads.png
 		// compute edges
 		// print nodes
+		for (final String n : nodes) {
+			out.println(n);
+		}
 		// print edges
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		for (final String e : edges) {
+			out.println(e);
+		}		
+		// TODO: longer code snippet
+		
+
 		// print footer
 		footer(out);
 		out.flush();
@@ -187,28 +273,46 @@ throw new ece351.util.Todo351Exception();
 
 	@Override
 	public Expr visitAnd(final AndExpr e) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
-		// return e;
+		// TODO: short code snippet
+		final Expr e2 = substitutions.get(e);
+		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
+		node(e2.serialNumber(), e2.serialNumber(), "../../gates/and_leads.png");
+		edge(e.left, e2);
+		edge(e.right, e2);
+		return e;
 	}
 
 	@Override
 	public Expr visitOr(final OrExpr e) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
-		// return e;
+		// TODO: short code snippet
+		final Expr e2 = substitutions.get(e);
+		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
+		node(e2.serialNumber(), e2.serialNumber(), "../../gates/or_leads.png");
+		edge(e.left, e2);
+		edge(e.right, e2);
+		return e;
 	}
 	
 	@Override public Expr visitNaryAnd(final NaryAndExpr e) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
-		// return e;
+		// TODO: short code snippet
+		final Expr e2 = substitutions.get(e);
+		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
+		node(e2.serialNumber(), e2.serialNumber(), "../../gates/and_noleads.png");
+		for (final Expr c : e.children) {
+			edge(c, e2);
+		}
+		return e;
 	}
 
 	@Override public Expr visitNaryOr(final NaryOrExpr e) { 
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
-		// return e;
+		// TODO: short code snippet
+		final Expr e2 = substitutions.get(e);
+		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
+		node(e2.serialNumber(), e2.serialNumber(), "../../gates/or_noleads.png");
+		for (final Expr c : e.children) {
+			edge(c, e2);
+		}
+		return e;
 	}
 
 

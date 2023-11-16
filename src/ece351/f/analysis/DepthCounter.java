@@ -48,26 +48,26 @@ public class DepthCounter {
 			// BinaryExpr case
 			// UnaryExpr case
 			// nothing more to measure
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+			// TODO: longer code snippet
+			throw new ece351.util.Todo351Exception();
 	}
 	
 	/** Return the depth of the deepest child. */
 	public int measureNaryExpr(final NaryExpr e, final int depth) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: short code snippet
+		throw new ece351.util.Todo351Exception();
 	}
 	
 	/** Return the depth of the deepest child. */
 	public int measureBinaryExpr(final BinaryExpr e, final int depth) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: short code snippet
+		throw new ece351.util.Todo351Exception();
 	}
 	
 	/** Return the depth of the child. */
 	public int measureUnaryExpr(final UnaryExpr e, final int depth) {
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: short code snippet
+		throw new ece351.util.Todo351Exception();
 	}
 
 	/** Return the depth of the deepest formula in this FProgram. */
