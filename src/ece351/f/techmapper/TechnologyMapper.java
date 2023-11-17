@@ -29,6 +29,8 @@ package ece351.f.techmapper;
 import java.io.PrintWriter;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -44,6 +46,7 @@ import ece351.common.ast.Expr;
 import ece351.common.ast.NAndExpr;
 import ece351.common.ast.NOrExpr;
 import ece351.common.ast.NaryAndExpr;
+import ece351.common.ast.NaryExpr;
 import ece351.common.ast.NaryOrExpr;
 import ece351.common.ast.NotExpr;
 import ece351.common.ast.OrExpr;
@@ -126,58 +129,87 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 		
 		// build a set of all of the exprs in the program
 		Set<Expr> exprs = ExtractAllExprs.allExprs(program);
+		Set<Expr> exprs_copy = ExtractAllExprs.allExprs(program);
 		
 		// simplify by the morgan rules
-		// for (Expr e : exprs) {
-		// 	// -a or -b = -(a and b)
-		// 	if (e instanceof OrExpr) {
-		// 		Expr left = ((OrExpr) e).left;
-		// 		Expr right = ((OrExpr) e).right;
-		// 		if (left instanceof NotExpr && right instanceof NotExpr) {
-		// 			Expr newExpr = new NotExpr(new AndExpr(((NotExpr) left).expr, ((NotExpr) right).expr));
-		// 			substitutions.put(e, newExpr);
-		// 		}
-		// 	}
-		// 	// -a or -b = -(a and b)
-		// 	if (e instanceof NaryOrExpr) {
-		// 		ImmutableList<Expr> children = ImmutableList.of();
-		// 		for (final Expr c : ((NaryOrExpr) e).children) {
-		// 			if (c instanceof NotExpr) {
-		// 				Expr a = ((NotExpr) c).expr;
-		// 				children = children.append(a);
-		// 			}
-		// 		}
-		// 		if (children.size() == ((NaryOrExpr) e).children.size()) {
-		// 			NaryAndExpr newExpr = new NaryAndExpr(children);
-		// 			// substitutions.put(e, new NotExpr(newExpr));
-		// 			exprs.remove(e);
-		// 			exprs.add(new NotExpr(newExpr));
-		// 		}
-		// 	}
-		// 	// -a and -b = -(a or b)
-		// 	if (e instanceof AndExpr) {
-		// 		Expr left = ((AndExpr) e).left;
-		// 		Expr right = ((AndExpr) e).right;
-		// 		if (left instanceof NotExpr && right instanceof NotExpr) {
-		// 			Expr newExpr = new NotExpr(new OrExpr(((NotExpr) left).expr, ((NotExpr) right).expr));
-		// 			substitutions.put(e, newExpr);
-		// 		}
-		// 	}
-		// 	// -a and -b = -(a or b)
-		// 	if (e instanceof NaryAndExpr) {
-		// 		NaryOrExpr newExpr = new NaryOrExpr();
-		// 		for (final Expr c : ((NaryAndExpr) e).children) {
-		// 			if (c instanceof NotExpr) {
-		// 				newExpr.append(((NotExpr) c).expr);
-		// 			}
-		// 		}
-		// 		if (newExpr.children.size() == ((NaryAndExpr) e).children.size()) {
-		// 			// substitutions.put(e, newExpr);
-		// 			exprs.remove(e);
-		// 			exprs.add(newExpr);
-		// 		}
-		// 	}
-		// }
+		List<Expr> modified_expr_new = new LinkedList<>();
+		List<Expr> modified_expr_old = new LinkedList<>();
+		for (Expr e: exprs_copy) {			
+			Expr simplified = e;
+			// 4 cases:
+			// -(-a _ -b) = (a _ b)
+			// -(-a _ b) = (a _ -b)
+			// -(a _ -b) = (-a _ b)
+			List<Expr> simplified_childrens_new = new LinkedList<>();
+			List<Expr> simplified_childrens_old = new LinkedList<>();
+			if (e instanceof NotExpr) {
+				NotExpr exprNot = (NotExpr) e;
+				if (exprNot.expr instanceof NaryExpr) { 
+					NaryExpr newExprNot = ((NaryExpr)exprNot.expr).filter(NotExpr.class, true);
+					NaryExpr newExpr = ((NaryExpr)exprNot.expr).filter(NotExpr.class, false);
+					if (newExprNot.children.size() >= newExpr.children.size()) {
+						// List<Expr> simplified_childrens_new = new LinkedList<>();
+						// List<Expr> simplified_childrens_old = new LinkedList<>();
+						for (Expr children : ((NaryExpr)e).children) {
+							NotExpr simp_child = new NotExpr(children);
+							simplified_childrens_new.add(simp_child.simplify());
+							simplified_childrens_old.add(children);
+						}
+						NaryExpr a;
+						if (e instanceof NaryAndExpr) {
+							a = new NaryOrExpr(simplified_childrens_new);
+						} else {
+							a = new NaryAndExpr(simplified_childrens_new);
+						}
+						simplified = a;
+						simplified_childrens_new.add(simplified);
+						simplified_childrens_old.add(exprNot);
+						simplified_childrens_old.add(e);
+						modified_expr_old.add(e);
+						modified_expr_new.add(simplified);
+					}
+				}
+			// (-a _ -b) = -(a _ b)
+			} else if (e instanceof NaryExpr) {
+				NaryExpr newExprNot = ((NaryExpr)e).filter(NotExpr.class, true);
+				NaryExpr newExpr = ((NaryExpr)e).filter(NotExpr.class, false);
+				if (newExprNot.children.size() >= newExpr.children.size()) {
+					// List<Expr> simplified_childrens_new = new LinkedList<>();
+					// List<Expr> simplified_childrens_old = new LinkedList<>();
+					for (Expr children : ((NaryExpr)e).children) {
+						NotExpr simp_child = new NotExpr(children);
+						simplified_childrens_new.add(simp_child.simplify());
+						simplified_childrens_old.add(simp_child.simplify());
+						simplified_childrens_old.add(children);
+					}
+					NaryExpr a;
+					if (e instanceof NaryAndExpr) {
+						a = new NaryOrExpr(simplified_childrens_new);
+					} else {
+						a = new NaryAndExpr(simplified_childrens_new);
+					}
+					simplified = new NotExpr(((Expr) a));
+					simplified_childrens_new.add(simplified);
+					simplified_childrens_new.add(a);
+					simplified_childrens_old.add(e);
+					modified_expr_old.add(e);
+					modified_expr_new.add(simplified);
+				}
+			}
+
+			if (simplified != e) {
+				for (Expr old_expr : simplified_childrens_old) {
+					if (exprs.contains(old_expr)) {
+						exprs.remove(old_expr);
+					}
+				}
+				for (Expr new_expr : simplified_childrens_new) {
+					if (!exprs.contains(new_expr)) {
+						exprs.add(new_expr);
+					}
+				}
+			}
+		}
 		
 		// build substitutions by determining equivalences of exprs
 		int i = 0;
@@ -201,8 +233,16 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 		}
 		// create nodes for output vars
 		for (final AssignmentStatement astmt : program.formulas) {
-			//visitVar(astmt.outputVar);
-			edge(astmt.expr, astmt.outputVar);
+			if (modified_expr_old.size() != 0) {
+				for (int w=0; w < modified_expr_old.size(); w++) {
+					if (examiner.examine(astmt.expr, modified_expr_old.get(w))) {
+						edge(modified_expr_new.get(w), astmt.outputVar);
+					} else {
+						edge(astmt.expr, astmt.outputVar);}
+				}
+			} else {
+				edge(astmt.expr, astmt.outputVar);
+			}
 		}
 		// attach images to gates
 		// ../../gates/not_noleads.png
@@ -216,9 +256,7 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 		// print edges
 		for (final String e : edges) {
 			out.println(e);
-		}		
-		// TODO: longer code snippet
-		
+		}
 
 		// print footer
 		footer(out);
