@@ -26,8 +26,10 @@
 
 package ece351.f.simgen;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.Set;
+import java.util.SortedSet;
 
 import ece351.common.ast.AndExpr;
 import ece351.common.ast.AssignmentStatement;
@@ -51,6 +53,8 @@ import ece351.f.FParser;
 import ece351.f.analysis.DetermineInputVars;
 import ece351.f.ast.FProgram;
 import ece351.util.CommandLine;
+import ece351.w.ast.WProgram;
+import ece351.w.parboiled.WParboiledParser;
 
 public final class SimulatorGenerator extends ExprVisitor {
 
@@ -112,27 +116,78 @@ public final class SimulatorGenerator extends ExprVisitor {
 		println("public static void main(final String[] args) {");
 		indent();
 		
+		println("final String s = File.separator;");
 		println("// read the input F program");
 		println("// write the output");
 		println("// read input WProgram");
+		println("final CommandLine cmd = new CommandLine(args);");
+		println("final String input = cmd.readInputSpec();");
+		println("final WProgram wp = WParboiledParser.parse(input);");
+
 		println("// construct storage for output");
+		println("final Map<String,StringBuilder> output = new LinkedHashMap<String,StringBuilder>();");
+		for (final AssignmentStatement assignment : program.formulas) {
+			final String var = assignment.outputVar.identifier;
+			println("output.put(\"" + var + "\", new StringBuilder());");
+		}
 		println("// loop over each time step");
+		println("final int timeCount = wp.timeCount();");
+		println("for (int time = 0; time < timeCount; time++) {");
+		indent();
 		println("// values of input variables at this time step");
+		for (final String inputVar : DetermineInputVars.inputVars(program)) {
+			println("final boolean in_" + inputVar + " = wp.valueAtTime(\"" + inputVar + "\", time);");
+		}
 		println("// values of output variables at this time step");
+		for (final AssignmentStatement assignment : program.formulas) {
+			final String var = assignment.outputVar.identifier;
+			println("final String out_" + var + " = " + generateCall(assignment));
+		}
 		println("// store outputs");
+		for (final AssignmentStatement assignment : program.formulas) {
+			final String var = assignment.outputVar.identifier;
+			println("output.get(\"" + var + "\").append(out_" + var + ");");
+		}
+		outdent();
+		println("}");
+		println("try {");
+		indent();
 		// end the time step loop
+		println("final File f = cmd.getOutputFile();");
 		// boilerplate
+		println("f.getParentFile().mkdirs();");
+		println("final PrintWriter pw = new PrintWriter(new FileWriter(f));");
 		println("// write the input");
+		println("System.out.println(wp.toString());");
+		println("pw.println(wp.toString());");
 		println("// write the output");
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		println("System.out.println(f.getAbsolutePath());");
+		
+		println("for (final Map.Entry<String,StringBuilder> e : output.entrySet()) {");
+		indent();
+		println("System.out.println(e.getKey() + \":\" + e.getValue().toString()+ \";\");");
+		println("pw.write(e.getKey() + \":\" + e.getValue().toString()+ \";\\n" + "\");");
+		outdent();
+		println("}");
+		println("pw.close();");
+		outdent();
+		println("} catch (final IOException e) {");
+		indent();
+		println("Debug.barf(e.getMessage());");
+		outdent();
+		print("}");
 		// end main method
 		outdent();
 		println("}");
 		
 		println("// methods to compute values for output pins");
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		for (final AssignmentStatement assignment : program.formulas) {
+			print(indent);
+			print(generateSignature(assignment));
+			traverseAssignmentStatement(assignment); 
+			print("; }");
+		}
+		
 		// end class
 		outdent();
 		println("}");
@@ -218,9 +273,26 @@ throw new ece351.util.Todo351Exception();
 		b.append(f.outputVar);
 		b.append("(");
 		// loop over f's input variables
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		for (final String inputVar : DetermineInputVars.inputVars(f)) {
+			if (signature) {
+				b.append("final boolean " + inputVar + ", ");
+			} else {
+				b.append("in_" + inputVar + ", ");
+			}
+		}
+		// remove the trailing comma and space
+		if (DetermineInputVars.inputVars(f).size() > 0) {
+			// remove the trailing comma and space
+			b.delete(b.length() - 2, b.length());
+		}
 		b.append(")");
+		// add the right part
+		if (signature) {
+			b.append(" { return ");
+		} else {
+			b.append(" ? \"1 \" : \"0 \";");
+		}
+
 		return b.toString();
 	}
 

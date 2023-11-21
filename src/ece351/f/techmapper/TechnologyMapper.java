@@ -311,7 +311,6 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 
 	@Override
 	public Expr visitAnd(final AndExpr e) {
-		// TODO: short code snippet
 		final Expr e2 = substitutions.get(e);
 		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
 		node(e2.serialNumber(), e2.serialNumber(), "../../gates/and_leads.png");
@@ -322,7 +321,6 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 
 	@Override
 	public Expr visitOr(final OrExpr e) {
-		// TODO: short code snippet
 		final Expr e2 = substitutions.get(e);
 		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
 		node(e2.serialNumber(), e2.serialNumber(), "../../gates/or_leads.png");
@@ -332,7 +330,6 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 	}
 	
 	@Override public Expr visitNaryAnd(final NaryAndExpr e) {
-		// TODO: short code snippet
 		final Expr e2 = substitutions.get(e);
 		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
 		node(e2.serialNumber(), e2.serialNumber(), "../../gates/and_noleads.png");
@@ -342,8 +339,7 @@ public final class TechnologyMapper extends PostOrderExprVisitor {
 		return e;
 	}
 
-	@Override public Expr visitNaryOr(final NaryOrExpr e) { 
-		// TODO: short code snippet
+	@Override public Expr visitNaryOr(final NaryOrExpr e) {
 		final Expr e2 = substitutions.get(e);
 		assert e2 != null : "no substitution for " + e + " " + e.serialNumber();
 		node(e2.serialNumber(), e2.serialNumber(), "../../gates/or_noleads.png");
