@@ -90,51 +90,112 @@ public final class Elaborator extends PostOrderExprVisitor {
 		int compCount = 0;
 
 		// iterate over all of the designUnits in root.
-		// for each one, construct a new architecture.
-		// Architecture a = du.arch.varyComponents(ImmutableList.<Component>of());
-		// this gives us a copy of the architecture with an empty list of components.
-		// now we can build up this Architecture with new components.
-			// In the elaborator, an architectures list of signals, and set of statements may change (grow)
+		for (final DesignUnit du: root.designUnits) {
+			// for each one, construct a new architecture.
+			Architecture a = du.arch.varyComponents(ImmutableList.<Component>of());
+			// this gives us a copy of the architecture with an empty list of components.
+			// now we can build up this Architecture with new components.
+			if (du.arch.components.size() > 0) {
+				for (Component c: du.arch.components) {
+					compCount++;
+				// In the elaborator, an architectures list of signals, and set of statements may change (grow)
+					for (DesignUnit du2: result.designUnits) {
 						//populate dictionary/map	
-						//add input signals, map to ports
-						//add output signals, map to ports
-						//add local signals, add to signal list of current designUnit						
-						//loop through the statements in the architecture body		
-							// make the appropriate variable substitutions for signal assignment statements
-							// i.e., call changeStatementVars
-							// make the appropriate variable substitutions for processes (sensitivity list, if/else body statements)
-							// i.e., call expandProcessComponent
-			 // append this new architecture to result
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+						if (c.entityName.equals(du2.entity.identifier)) {
+							int i;
+							//add input signals, map to ports
+							for (i = 0; i < du2.entity.input.size(); i++) {
+								current_map.put(du2.entity.input.get(i), c.signalList.get(i));
+							}
+							//add output signals, map to ports
+							for (int j = 0; j < du2.entity.output.size(); j++, i++) {
+								current_map.put(du2.entity.output.get(j), c.signalList.get(i));
+							}
+							//add local signals, add to signal list of current designUnit
+							if (du2.arch.signals.size() > 0) {
+								for (String s: du2.arch.signals) {
+									current_map.put(s, "comp" + compCount + "_" + s);
+									a = a.appendSignal("comp" + compCount + "_" + s);
+								}
+							}
+							//loop through the statements in the architecture body
+							for (Statement s: du2.arch.statements) {
+								// make the appropriate variable substitutions for signal assignment statements
+								// i.e., call changeStatementVars
+								if (s instanceof AssignmentStatement) {
+									a = a.appendStatement(changeStatementVars((AssignmentStatement) s));
+								}
+								// make the appropriate variable substitutions for processes (sensitivity list, if/else body statements)
+								// i.e., call expandProcessComponent
+								else if (s instanceof Process) {
+									a = a.appendStatement(expandProcessComponent((Process) s));
+								}
+							}
+						}
+					}
+				}
+			}
+			// append this new architecture to result
+			result = result.append(du.setArchitecture(a));
+		}
 		assert result.repOk();
 		return result;
 	}
 	
 	// you do not have to use these helper methods; we found them useful though
 	private Process expandProcessComponent(final Process process) {
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: longer code snippet
+		if (process.sequentialStatements.size() > 0) {
+			Process p = new Process();
+			for (Statement s: process.sequentialStatements) {
+				if (s instanceof IfElseStatement) {
+					IfElseStatement i = changeIfVars((IfElseStatement) s);
+					p = p.appendStatement(i);
+				}
+				if (s instanceof AssignmentStatement) {
+					AssignmentStatement a = changeStatementVars((AssignmentStatement) s);
+					p = p.appendStatement(a);
+				}
+			}
+			for (String s: process.sensitivityList) {
+				p = p.appendSensitivity(current_map.get(s));
+			}
+			return p;
+		}
+		else {
+			return process;
+		}
 	}
 	
 	// you do not have to use these helper methods; we found them useful though
 	private  IfElseStatement changeIfVars(final IfElseStatement s) {
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: longer code snippet
+		ImmutableList<AssignmentStatement> elseBody = ImmutableList.of();
+		ImmutableList<AssignmentStatement> ifBody = ImmutableList.of();
+		for (AssignmentStatement a: s.elseBody) {
+			elseBody = elseBody.append(changeStatementVars(a));
+		}
+		for (AssignmentStatement a: s.ifBody) {
+			ifBody = ifBody.append(changeStatementVars(a));
+		}
+		return new IfElseStatement(elseBody, ifBody, traverseExpr(s.condition));
 	}
 
 	// you do not have to use these helper methods; we found them useful though
 	private AssignmentStatement changeStatementVars(final AssignmentStatement s){
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: short code snippet
+		AssignmentStatement a = traverseAssignmentStatement(s);
+		return new AssignmentStatement(current_map.get(a.outputVar.toString()), a.expr);
 	}
 	
 	
 	@Override
 	public Expr visitVar(VarExpr e) {
 		// TODO replace/substitute the variable found in the map
-// TODO: short code snippet
-throw new ece351.util.Todo351Exception();
+		if (current_map.containsKey(e.identifier)) {
+			return new VarExpr(current_map.get(e.identifier));
+		}
+		return e;
 	}
 	
 	// do not rewrite these parts of the AST
