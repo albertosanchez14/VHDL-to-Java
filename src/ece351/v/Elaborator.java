@@ -144,7 +144,6 @@ public final class Elaborator extends PostOrderExprVisitor {
 	
 	// you do not have to use these helper methods; we found them useful though
 	private Process expandProcessComponent(final Process process) {
-		// TODO: longer code snippet
 		if (process.sequentialStatements.size() > 0) {
 			Process p = new Process();
 			for (Statement s: process.sequentialStatements) {
@@ -169,7 +168,6 @@ public final class Elaborator extends PostOrderExprVisitor {
 	
 	// you do not have to use these helper methods; we found them useful though
 	private  IfElseStatement changeIfVars(final IfElseStatement s) {
-		// TODO: longer code snippet
 		ImmutableList<AssignmentStatement> elseBody = ImmutableList.of();
 		ImmutableList<AssignmentStatement> ifBody = ImmutableList.of();
 		for (AssignmentStatement a: s.elseBody) {
@@ -183,7 +181,6 @@ public final class Elaborator extends PostOrderExprVisitor {
 
 	// you do not have to use these helper methods; we found them useful though
 	private AssignmentStatement changeStatementVars(final AssignmentStatement s){
-		// TODO: short code snippet
 		AssignmentStatement a = traverseAssignmentStatement(s);
 		return new AssignmentStatement(current_map.get(a.outputVar.toString()), a.expr);
 	}
@@ -191,7 +188,6 @@ public final class Elaborator extends PostOrderExprVisitor {
 	
 	@Override
 	public Expr visitVar(VarExpr e) {
-		// TODO replace/substitute the variable found in the map
 		if (current_map.containsKey(e.identifier)) {
 			return new VarExpr(current_map.get(e.identifier));
 		}
