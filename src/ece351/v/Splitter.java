@@ -80,25 +80,78 @@ public final class Splitter extends PostOrderExprVisitor {
 	}
 
 	private VProgram splitit(final VProgram program) {
-					// Determine if the process needs to be split into multiple processes
-						// Split the process if there are if/else statements so that the if/else statements only assign values to one pin
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		VProgram result = new VProgram();
+		// Loop over the design units
+		for (final DesignUnit du : program.designUnits) {
+			if (du.arch == null) continue;
+			// Loop over the statements in the architecture
+			Architecture newArch = du.arch;
+			newArch = newArch.varyStatements(ImmutableList.of());
+			for (final Statement statement : du.arch.statements) {
+				// Determine if the statement is a process
+				if (statement instanceof Process) {
+					final Process process = (Process) statement;
+					for (final Statement stmt : process.sequentialStatements) {
+						// Determine if the process needs to be split into multiple processes
+						if (stmt instanceof IfElseStatement) {
+							// Split the process if there are if/else statements so that the if/else statements only assign values to one pin
+							final IfElseStatement ifElseStmt = (IfElseStatement) stmt;
+							ImmutableList<Statement> newStatements = splitIfElseStatement(ifElseStmt);
+							for (final Statement s : newStatements) {
+								newArch = newArch.appendStatement(s);
+							}
+						} else {
+							// Just append the statement if it is not an if/else statement
+							Process newProcess = new Process()
+															.setSensitivityList(process.sensitivityList)
+															.setStatements(ImmutableList.of(stmt));
+							newArch = newArch.appendStatement(newProcess);
+						}
+					}
+				// Not a process so just append the statement
+				} else {
+					newArch = newArch.appendStatement(statement);
+				}
+			}
+			result = result.append(new DesignUnit(newArch, du.entity));
+		}
+		// TODO: longer code snippet
+		return result;
 	}
 	
 	// You do not have to use this helper method, but we found it useful
 	
 	private ImmutableList<Statement> splitIfElseStatement(final IfElseStatement ifStmt) {
+		ImmutableList<Statement> result = ImmutableList.of();
 		// loop over each statement in the ifBody
+		for (final AssignmentStatement if_as : ifStmt.ifBody) {
 			// loop over each statement in the elseBody
+			for (final AssignmentStatement else_as : ifStmt.elseBody) {
 				// check if outputVars are the same
+				if (if_as.outputVar.equals(else_as.outputVar)) {
 					// initialize/clear this.usedVarsInExpr
+					this.usedVarsInExpr.clear();
 					// call traverse a few times to build up this.usedVarsInExpr
+					traverseExpr(if_as.expr);
+					traverseExpr(else_as.expr);
+					traverseExpr(ifStmt.condition);
 					// build sensitivity list from this.usedVarsInExpr
+					ImmutableList<String> sensitivityList = ImmutableList.of();
+					for (final String s : this.usedVarsInExpr) {
+						sensitivityList = sensitivityList.append(s);
+					}
 					// build the resulting list of split statements
+					IfElseStatement newIfElse = new IfElseStatement(ImmutableList.of(else_as), ImmutableList.of(if_as), ifStmt.condition);
+					result = result.append(new Process()
+											.setSensitivityList(sensitivityList)
+											.appendStatement(newIfElse));
+				}
+				// Do not cover the case where the outputVars are not the same
+			}
+		}
 		// return result
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: longer code snippet
+		return result;
 	}
 
 	@Override

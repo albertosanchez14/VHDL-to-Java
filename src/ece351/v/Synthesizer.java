@@ -84,8 +84,31 @@ public final class Synthesizer extends PostOrderExprVisitor {
 	private FProgram synthesizeit(final VProgram root) {	
 		FProgram result = new FProgram();
 			// set varPrefix for this design unit
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		// TODO: longer code snippet
+		condCount++;
+		for (final DesignUnit du : root.designUnits) {
+			// set varPrefix for this design unit
+			varPrefix = du.arch.entityName;
+			// traverse the AST
+			for (final Statement statement : du.arch.statements) {
+				if (statement instanceof Process) {
+					for (final Statement s : ((Process) statement).sequentialStatements) {
+						if (s instanceof IfElseStatement) {
+							FProgram temp = implication((IfElseStatement) s);
+							result = result.appendAll(temp);
+						} else if (s instanceof AssignmentStatement) {
+							AssignmentStatement as = (AssignmentStatement) s;
+							String outputVar = this.varPrefix + as.outputVar.identifier;
+							result = result.append(new AssignmentStatement(outputVar, traverseExpr(as.expr)));
+						}
+					}
+				} if (statement instanceof AssignmentStatement) {
+					AssignmentStatement as = (AssignmentStatement) statement;
+					String outputVar = this.varPrefix + as.outputVar.identifier;
+					result = result.append(new AssignmentStatement(outputVar, traverseExpr(as.expr)));
+				}
+			}
+		}
 		return result;
 	}
 	
@@ -104,8 +127,19 @@ throw new ece351.util.Todo351Exception();
 		}
 
 		// build result
-// TODO: longer code snippet
-throw new ece351.util.Todo351Exception();
+		FProgram result = new FProgram();
+		VarExpr cond_var = new VarExpr(conditionPrefix + condCount++);
+		Expr cond_expr = traverseExpr(statement.condition);
+		AssignmentStatement condNew = new AssignmentStatement(cond_var, cond_expr);
+		result = result.append(condNew);
+		Expr if_temp = traverseExpr(ifb.expr);
+		Expr ifExpr = new AndExpr(cond_var, traverseExpr(ifb.expr));
+		Expr elseExpr = new AndExpr(new NotExpr(cond_var), traverseExpr(elb.expr));
+		String outputVar = this.varPrefix + ifb.outputVar.identifier;
+		AssignmentStatement ifElseNew = new AssignmentStatement(outputVar, new OrExpr(ifExpr, elseExpr));
+		result = result.append(ifElseNew);
+		// TODO: longer code snippet
+		return result;
 	}
 
 	/** Rewrite var names with prefix to mitigate name collision. */
