@@ -115,7 +115,6 @@ public final class Splitter extends PostOrderExprVisitor {
 			}
 			result = result.append(new DesignUnit(newArch, du.entity));
 		}
-		// TODO: longer code snippet
 		return result;
 	}
 	
@@ -150,7 +149,6 @@ public final class Splitter extends PostOrderExprVisitor {
 			}
 		}
 		// return result
-		// TODO: longer code snippet
 		return result;
 	}
 

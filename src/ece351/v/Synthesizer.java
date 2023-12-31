@@ -84,7 +84,6 @@ public final class Synthesizer extends PostOrderExprVisitor {
 	private FProgram synthesizeit(final VProgram root) {	
 		FProgram result = new FProgram();
 			// set varPrefix for this design unit
-		// TODO: longer code snippet
 		condCount++;
 		for (final DesignUnit du : root.designUnits) {
 			// set varPrefix for this design unit
@@ -132,13 +131,11 @@ public final class Synthesizer extends PostOrderExprVisitor {
 		Expr cond_expr = traverseExpr(statement.condition);
 		AssignmentStatement condNew = new AssignmentStatement(cond_var, cond_expr);
 		result = result.append(condNew);
-		Expr if_temp = traverseExpr(ifb.expr);
 		Expr ifExpr = new AndExpr(cond_var, traverseExpr(ifb.expr));
 		Expr elseExpr = new AndExpr(new NotExpr(cond_var), traverseExpr(elb.expr));
 		String outputVar = this.varPrefix + ifb.outputVar.identifier;
 		AssignmentStatement ifElseNew = new AssignmentStatement(outputVar, new OrExpr(ifExpr, elseExpr));
 		result = result.append(ifElseNew);
-		// TODO: longer code snippet
 		return result;
 	}
 
